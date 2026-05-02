@@ -1,4 +1,5 @@
 #include "../include/common.h"
+#include <arpa/inet.h>
 #include <float.h>
 #include <netinet/in.h>
 #include <stdio.h>
@@ -47,12 +48,16 @@ int main() {
     for (;;) {
         int conn_fd;
         struct sockaddr_in client_address;
-        if((conn_fd = accept(sock_fd, (SockAddr *)NULL, NULL)) < 0) {
+        socklen_t client_addreess_len = sizeof(client_address);
+        char client_ip[BUFFER_SIZE];
+        if((conn_fd = accept(sock_fd, (SockAddr *)&client_address, &client_addreess_len)) < 0) {
             close(sock_fd);
             return format_error("ERROR HAPPENED WHILE CONNECTIING TO A CLIENT");
         }
 
-        fprintf(stdout, "\nCONNECTED TO THE CLIENT SUCCESSFULLY\n");
+        inet_ntop(AF_INET, (void*)&client_address, client_ip, BUFFER_SIZE);
+
+        fprintf(stdout, "\nCONNECTED SUCCESSFULLY TO THE CLIENT WITH IP:( %s )\n", client_ip);
         fflush(stdout);
 
         while ((read_bytes = read(conn_fd, read_buff, BUFFER_SIZE)) > 0) {
