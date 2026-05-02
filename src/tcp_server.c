@@ -1,0 +1,89 @@
+#include "../include/common.h"
+#include <float.h>
+#include <netinet/in.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
+int main() {
+    int sock_fd;
+
+    int read_bytes;
+    int write_bytes;
+
+    char read_buff[BUFFER_SIZE];
+    char write_buff[BUFFER_SIZE];
+
+    struct sockaddr_in server_address;
+
+    if((sock_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        return format_error("ERROR HAPPENED WHILE CREATING THE SOCKET");
+    }
+
+    memset(&server_address, 0, sizeof(server_address));
+    memset(read_buff, 0, BUFFER_SIZE);
+    memset(write_buff, 0, BUFFER_SIZE);
+
+    // THIS IN THE CLIENT SIDE SHOULD CONVERT THE IP FROM THE ARGV[1]
+    // TO THE ADDRESS BUT HERE IN SERVER WE ACCEPT ANY IP
+    server_address.sin_family = AF_INET;
+    server_address.sin_port = htons(SERVER_PORT);
+    server_address.sin_addr.s_addr = htonl(INADDR_ANY);
+
+    if(bind(sock_fd, (SockAddr *)&server_address, sizeof(server_address)) < 0)  {
+        close(sock_fd);
+        return format_error("ERROR HAPPENED WHILE BINDING THE SOCKET");
+    }
+
+    if (listen(sock_fd, SOMAXCONN) < 0 ) {
+        close(sock_fd);
+        return format_error("ERROR HAPPENED WHILE LISTEN FOR CONNECTION");
+    }
+
+    fprintf(stdout, "WAITING FOR A CLIENT\n");
+    fflush(stdout);
+
+    for (;;) {
+        int conn_fd;
+        struct sockaddr_in client_address;
+        if((conn_fd = accept(sock_fd, (SockAddr *)NULL, NULL)) < 0) {
+            close(sock_fd);
+            return format_error("ERROR HAPPENED WHILE CONNECTIING TO A CLIENT");
+        }
+
+        fprintf(stdout, "\nCONNECTED TO THE CLIENT SUCCESSFULLY\n");
+        fflush(stdout);
+
+        while ((read_bytes = read(conn_fd, read_buff, BUFFER_SIZE)) > 0) {
+            // DISPLAY THE REQUEST MESSAGE
+            fprintf(stdout, "BIN DATA: %s", read_buff);
+            fprintf(stdout, "\n");
+            fprintf(stdout, "HEX DATA: %s", bin_to_hex(read_buff, strlen(read_buff)));
+            fflush(stdout);
+
+            // ASSUME THAT \R\N IS THE END OF THE FILE
+            if (read_buff[read_bytes - 1] == '\n') { break; }
+            memset(read_buff, 0, BUFFER_SIZE);
+        }
+
+        if (read_bytes < 0) {
+            close(conn_fd);
+            close(sock_fd);
+            return format_error("ERROR HAPPEN WHILE READING FROM A FILE");
+        }
+
+
+        snprintf(write_buff, BUFFER_SIZE,"HTTP/1.0 200 OK\r\n\r\nHello world");
+        if((write_bytes = write(conn_fd, write_buff, strlen(write_buff))) < (int)strlen(write_buff)) {
+            close(sock_fd);
+            close(conn_fd);
+            return format_error("ERROR HAPPENED WHILE WRITING DATA TO A CLIENT");
+        }
+
+        memset(write_buff, 0, BUFFER_SIZE);
+        close(conn_fd);
+    }
+
+    return 0;
+}
