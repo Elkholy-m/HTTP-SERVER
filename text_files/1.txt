@@ -1,0 +1,64 @@
+#include "../include/common.h"
+int main(int argc, char** argv) {
+    int sock_fd;
+
+    int send_bytes;
+    int recive_bytes;
+
+    struct sockaddr_in server_addr;
+
+    char   send_buff[BUFFER_SIZE];
+    char recive_buff[BUFFER_SIZE];
+
+    if (argc != 2) {
+        return format_error("USAGE: %S <SERVER ADDRESS>", argv[0]);
+    }
+
+    // CREATING THE SOCKET
+    if ((sock_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        return format_error("ERROR WHILE CREATING THE SOCKET");
+    }
+
+    // CLEARING THE BUFFERS AND SERVER ADDRESS
+    memset(&server_addr, 0, sizeof(server_addr));
+    memset(send_buff, 0, sizeof(server_addr));
+    memset(recive_buff, 0, sizeof(server_addr));
+
+    // FILL THE SERVER ADDRESS DETAILS FROM ARGV[1]
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(CLIENT_PORT);
+    if (inet_pton(AF_INET, argv[1], &server_addr.sin_addr) != 1) {
+        return format_error("THE ( %S ) IS NOT A VALID ADDRESS", argv[1]);
+    }
+
+    // CONNECT TO THE SERVER ADDRESS
+    if (connect(sock_fd, (SockAddr*) &server_addr, sizeof(server_addr)) < 0) {
+        return format_error("ERROR WHILE CONNECTING TO %S", argv[1]);
+    }
+
+    // SEND REQUEST TO THE BUFFER THEN TO THE SOCKET
+    sprintf(send_buff, 
+            "GET / HTTP/1.1\r\n"
+            "Host: google.com\r\n"
+            "Connection: close\r\n"
+            "User-Agent: MyTestClient/1.0\r\n"
+            "\r\n");
+
+    send_bytes = strlen(send_buff);
+
+    if (write(sock_fd, send_buff, send_bytes) != send_bytes) {
+        return format_error("ERROR WHILE WRITING IN THE SOCKET");
+    }
+
+    // RECIEVE THE RESPONSE FROM THE SERVER
+    while ((recive_bytes = read(sock_fd, recive_buff, BUFFER_SIZE)) > 0) {
+        printf("%s", recive_buff);
+        memset(recive_buff, 0, recive_bytes);
+    }
+
+    if (recive_bytes < 0) {
+        return format_error("ERROR WHILE READING FROM SOCKET");
+    }
+
+    return 0;
+}

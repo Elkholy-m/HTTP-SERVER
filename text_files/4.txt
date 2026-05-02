@@ -1,0 +1,77 @@
+#include "../include/common.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/socket.h>
+#include <time.h>
+#include <unistd.h>
+
+bool test_case (int* vals, int len) {
+    for (int i = 0; i < len; i++) {
+        if (vals[i] < 1 || vals[i] > 6) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+void dump_arr(int* arr, int len) {
+    for (int i = 0; i < len; i++) {
+        printf("arr[%d] = %d\n", i, arr[i]);
+    }
+}
+
+int main() {
+    int arr[50];
+    for (int i = 0; i < 50; i++) {
+        srand(time(NULL));
+        float r_num = rand() / (float)RAND_MAX;
+        int range_num = r_num * 6 + 1;
+        sleep(1);
+        arr[i] = range_num;
+    }
+
+    if (test_case(arr, 50))
+        printf("SUCCESS\n");
+    else 
+        printf("FAIL\n");
+
+    dump_arr(arr, 50);
+
+    return 0;
+}
+
+
+int main2(int argc, char** argv) {
+    if (argc < 3) {
+        printf("Usage: program_name <IP> <PORT>\n");
+        return -1;
+    }
+
+
+    struct sockaddr_in sock_addr;
+    socklen_t sock_addr_len = sizeof(sock_addr);
+    int sock_fd, conn_channel, n_bytes;
+    char read_buffer[BUFFER_SIZE], write_buffer[BUFFER_SIZE];
+    int res;
+
+    sock_fd = socket(AF_INET, SOCK_STREAM, 0);
+
+    memset(&sock_addr  , 0, sock_addr_len);
+    memset(read_buffer , 0, BUFFER_SIZE);
+    memset(write_buffer, 0, BUFFER_SIZE);
+
+    sock_addr.sin_family = AF_INET;
+    sock_addr.sin_port = htons(CLIENT_PORT);
+
+    res = inet_pton(AF_INET, argv[1], &sock_addr.sin_addr);
+    res = connect(sock_fd, (SockAddr*)&sock_addr, sock_addr_len);
+
+    srand(time(NULL));
+    rand();
+
+    // snprintf(write_buffer, BUFFER_SIZE, "%s\n", );
+    n_bytes = write(sock_fd, write_buffer, BUFFER_SIZE);
+
+    return 0;
+}

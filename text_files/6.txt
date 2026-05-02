@@ -1,0 +1,215 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <unistd.h>
+
+typedef struct LINKED_LIST linked_list;
+
+typedef struct LINKED_LIST {
+    char cell_value;
+    linked_list* next;
+} linked_list;
+
+linked_list* construct_candidates();
+void solveSudoku(char board[9][9], int boardSize, int* boardColSize);
+bool next_call(char board[9][9], int row_num, int col_num);
+void eleminate_by_row(int row_num, char board[9][9], linked_list** candidates);
+void eleminate_by_col(int col_num, char board[9][9], linked_list** candidates);
+void eleminate_by_box(int row_num, int col_num, char board[9][9], linked_list** candidates);
+void eleminate_candidate(linked_list** candidates, char candidate);
+void display_candidates(linked_list* candidates);
+void display_board(char board[9][9]);
+void free_linked_list(linked_list** list);
+
+const int ROW_SIZE = 9;
+const int COL_SIZE = 9;
+
+int main() {
+char board[9][9] = {
+        {'.','.','.','.','.','.','.','.','.'},
+        {'.','9','.','.','1','.','.','3','.'},
+        {'.','.','6','.','2','.','7','.','.'},
+        {'.','.','.','3','.','4','.','.','.'},
+        {'2','1','.','.','.','.','.','9','8'},
+        {'.','.','.','.','.','.','.','.','.'},
+        {'.','.','2','5','.','6','4','.','.'},
+        {'.','8','.','.','.','.','.','1','.'},
+        {'.','.','.','.','.','.','.','.','.'}
+    };
+    //  = {
+    //     { '5', '3', '.', '.', '7', '.', '.', '.', '.' },
+    //     { '6', '.', '.', '1', '9', '5', '.', '.', '.' },
+    //     { '.', '9', '8', '.', '.', '.', '.', '6', '.' },
+    //     { '8', '.', '.', '.', '6', '.', '.', '.', '3' },
+    //     { '4', '.', '.', '8', '.', '3', '.', '.', '1' },
+    //     { '7', '.', '.', '.', '2', '.', '.', '.', '6' },
+    //     { '.', '6', '.', '.', '.', '.', '2', '8', '.' },
+    //     { '.', '.', '.', '4', '1', '9', '.', '.', '5' },
+    //     { '.', '.', '.', '.', '8', '.', '.', '7', '9' }
+    // };
+
+    int boardColSize = 9;
+    solveSudoku(board, 9, &boardColSize);
+
+    return 0;
+}
+
+void solveSudoku(char board[9][9], int boardSize, int* boardColSize) {
+    if(next_call(board, 0,  0)) {
+        printf("I got the solution :)\n\n");
+        display_board(board);
+    } else {
+        printf("there is a bug in the code :(\n");
+    }
+}
+
+bool next_call(char board[9][9], int row_num, int col_num) {
+    int next_row_num = row_num;
+    int next_col_num = col_num + 1;
+
+    if(next_col_num > 8) {
+        next_col_num = 0;
+        next_row_num++;
+    }
+
+    if (row_num > 8) {
+        return true;
+    }
+
+    if (board[row_num][col_num] != '.') {
+        return next_call(board, next_row_num, next_col_num);
+    }
+
+    linked_list* candidates = construct_candidates();
+
+    eleminate_by_row(row_num, board, &candidates);
+    eleminate_by_col(col_num, board, &candidates);
+    eleminate_by_box(row_num, col_num, board, &candidates);
+
+    linked_list* candidates_cp = candidates;
+
+    if (candidates_cp == NULL) { 
+        free_linked_list(&candidates);
+        return false; 
+    }
+
+    while(candidates_cp != NULL) {
+        board[row_num][col_num] = candidates_cp->cell_value;
+        if(next_call(board, next_row_num, next_col_num) == true) {
+            free_linked_list(&candidates);
+            return true;
+        }
+
+        board[row_num][col_num] = '.';
+        candidates_cp = candidates_cp->next;
+    }
+
+    free_linked_list(&candidates);
+    return false;
+}
+
+void eleminate_by_row(int row_num, char board[9][9], linked_list** candidates) {
+    for (int i = 0; i < COL_SIZE; ++i) {
+        if (board[row_num][i] != '.') {
+            eleminate_candidate(candidates, board[row_num][i]);
+        }
+    }
+}
+
+void eleminate_by_col(int col_num, char board[9][9], linked_list** candidates) {
+    for (int i = 0; i < COL_SIZE; ++i) {
+        if (board[i][col_num] != '.') {
+            eleminate_candidate(candidates, board[i][col_num]);
+        }
+    }
+}
+
+void eleminate_by_box(int row_num, int col_num, char board[9][9], linked_list** candidates) {
+    int start_row = (row_num / 3) * 3;
+    int start_col = (col_num / 3) * 3;
+
+    for (int i = start_row; i < start_row + 3; ++i) {
+        for (int j = start_col; j < start_col + 3; ++j) {
+            if (board[i][j] != '.') {
+                eleminate_candidate(candidates, board[i][j]);
+            }
+        }
+    }
+}
+
+void eleminate_candidate(linked_list** candidates, char candidate) {
+    linked_list head;
+    head.next = *candidates;
+    
+    linked_list* copy = &head;
+
+    while (copy->next != NULL) {
+        if (copy->next->cell_value == candidate) {
+            linked_list* to_remove = copy->next;
+            copy->next = copy->next->next;
+            free(to_remove); 
+            break;
+        }
+        copy = copy->next;
+    }
+
+    *candidates = head.next;
+}
+
+linked_list* construct_candidates() {
+    linked_list head;
+    head.next = NULL;
+
+    linked_list* copy = &head;
+
+    for (int i = 49; i < 58; i++) {
+        linked_list* new = malloc(sizeof(linked_list));
+        if (new == NULL) { return NULL; }
+
+        new->cell_value = i;
+        new->next = NULL;
+
+        copy->next = new;
+        copy = copy->next;
+    }
+
+    return head.next;
+}
+
+void display_candidates(linked_list* candidates) {
+    if (!candidates) {
+        printf("candidates = NULL");
+        return;
+    }
+
+    linked_list* copy = candidates;
+    while (copy != NULL) {
+        printf("Candidate: %c\n", copy->cell_value);
+        copy = copy->next;
+    }
+}
+
+void display_board(char board[9][9]) {
+    for (int i = 0; i < ROW_SIZE; i++) {
+        for (int j = 0; j < COL_SIZE; j++) {
+            printf("  %c  ", board[i][j]);
+        }
+        printf("\n\n");
+    }
+}
+
+void free_linked_list(linked_list** list) {
+    if (list == NULL || *list == NULL) { return; }
+
+    linked_list* above_ptr;
+    linked_list* current = *list;
+
+    while (current != NULL){
+        above_ptr = current->next;
+        free(current);
+        current = above_ptr;
+    }
+
+    // 4. SET THE ORIGINAL HEAD POINTER TO NULL TO AVOID "DANGLING POINTERS"
+    *list = NULL;
+}
