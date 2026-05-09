@@ -37,7 +37,7 @@ int main() {
         return format_error("ERROR HAPPENED WHILE BINDING THE SOCKET");
     }
 
-    if (listen(sock_fd, SOMAXCONN) < 0 ) {
+    if (listen(sock_fd, SERVER_BACKLOG) < 0 ) {
         close(sock_fd);
         return format_error("ERROR HAPPENED WHILE LISTEN FOR CONNECTION");
     }

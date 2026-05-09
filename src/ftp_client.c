@@ -58,18 +58,22 @@ int main() {
         "../text_files/%d.txt",
         rand_num);
 
+    clock_t start_t = clock();
     n_bytes = write(sock_fd, write_buffer, BUFFER_SIZE);
-    printf("write_buffer: %s", write_buffer);
+    printf("WRITE_BUFFER: %s\t", write_buffer);
     fflush(stdout);
 
     memset(write_buffer, 0, BUFFER_SIZE);
+    // sleep(1);
 
     while((n_bytes = read(sock_fd, read_buffer, BUFFER_SIZE)) > 0) {
-        fprintf(stdout, "READ (%d.txt):\n%s", rand_num, read_buffer);
-        fflush(stdout);
-        memset(read_buffer, 0, BUFFER_SIZE);
+        // fprintf(stdout, "READ (%d.txt):\n%s", rand_num, read_buffer);
+        // fflush(stdout);
+        // memset(read_buffer, 0, BUFFER_SIZE);
     }
-
+    
+    clock_t end_t = clock();
+    printf("TIME ELPASED = %lf\n", (double)(end_t -start_t) / CLOCKS_PER_SEC);
     close(sock_fd);
     return 0;
 }

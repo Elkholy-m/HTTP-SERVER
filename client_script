@@ -2,6 +2,6 @@
 
 for N in {1..150}
 do 
-    make -C src/ ftp_client > /dev/null
+    make --no-print-directory -C src/ ftp_client
 done
 wait

@@ -27,10 +27,10 @@ tcp_client.o: common.o
 	@$(CC) -c -o $(ODIR)/$@ tcp_client.c $(CFLAGS)
 
 ftp_client:
-	@gcc -o out/ftp_client ftp_client.c common.c && out/ftp_client
+	@gcc -o out/ftp_client ftp_client.c common.c my_queue.c && out/ftp_client
 
 ftp_server:
-	@gcc -o out/ftp_server ftp_server.c common.c && out/ftp_server
+	@gcc -o out/ftp_server ftp_server.c common.c my_queue.c && out/ftp_server
 
 common.o: 
 	@$(CC) -c -o $(ODIR)/$@ common.c $(CFLAGS)
